@@ -1,0 +1,110 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cs-deploy
+  namespace: csns
+  labels:
+    app: cs
+    name: cs-deploy
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: cs
+      name: cs-po
+  template:
+    metadata:
+      name: cs-pod
+      namespace: csns
+      labels:
+        app: cs
+        name: cs-po
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+      - name: cspod-container
+        image: linuxserver/code-server:4.92.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8443
+        volumeMounts:
+        - name: config-vol
+          mountPath: /opt/config
+          readOnly: true
+        - name: secret-vol
+          mountPath: /opt/secret
+          readOnly: true
+        - name: workspace-vol
+          mountPath: /config/workspace
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        envFrom:
+        - configMapRef:
+            name: cs-cm
+        - secretRef:
+            name: cs-secret
+        resources:
+          limits:
+            memory: 256Mi
+            cpu: 200m
+          requests:
+            memory: 256Mi
+            cpu: 200m
+      volumes:
+      - name: config-vol
+        hostPath:
+          path: /opt/config
+          type: DirectoryOrCreate
+      - name: secret-vol
+        hostPath:
+          path: /opt/secret
+          type: DirectoryOrCreate
+      - name: workspace-vol
+        persistentVolumeClaim:
+          claimName: cs-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cs-svc
+  namespace: csns
+  labels:
+    app: cs
+    name: cs-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: cs
+    name: cs-po
+  ports:
+  - port: 8080
+    targetPort: 8443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cs-ing
+  namespace: csns
+  labels:
+    app: cs
+    name: cs-ing
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: code.159.89.210.98.nip.io
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: cs-svc
+            port: 
+              number: 8080

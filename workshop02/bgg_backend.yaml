@@ -8,16 +8,23 @@ metadata:
     app: bggapp
     name: bggapp-deploy
 spec:
+  strategy: 
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   replicas: 3
   selector: 
     matchLabels:
       app: bggapp
+      name: bggapp-po
   template:
     metadata:
       name: bggapp-pod
       namespace: bggns
       labels:
         app: bggapp
+        name: bggapp-po
     spec:
       containers:
       - name: bggapp-container
@@ -55,11 +62,12 @@ metadata:
     app: bggapp
     name: bggapp-svc
 spec:
-  # type: ClusterIP
+  type: ClusterIP
   # type: NodePort
-  type: LoadBalancer
+  # type: LoadBalancer
   selector:
     app: bggapp
+    name: bggapp-po
   ports:
   - port: 80
     targetPort: app-port

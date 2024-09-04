@@ -11,10 +11,12 @@ spec:
   selector: 
     matchLabels:
       app: bggdb
+      name: bggdb-po
   template:
     metadata:
       labels:
         app: bggdb
+        name: bggdb-po
     spec:
       containers:
       - name: bggdb-container
@@ -37,6 +39,7 @@ spec:
   type: ClusterIP
   selector:
     app: bggdb
+    name: bggdb-po
   ports:
   - port: 3306
     targetPort: 3306
